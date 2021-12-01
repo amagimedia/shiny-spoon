@@ -1,26 +1,25 @@
 import React, { useState } from "react";
 import TextField from "@mui/material/TextField";
 import { Button, Grid, Typography } from "@mui/material";
-export default function Form({
-  playerRef,
-  handleMessage,
-  handletoggleMessage,
-}) {
+export default function Form({ playerRef, handleMessage }) {
   const [vSrc, setSrc] = useState("");
-
   const handleSubmit = () => {
     if (vSrc) {
       if (playerRef.current) {
         const player = playerRef.current;
         player.src(vSrc);
-        console.log(player.duration());
-        handletoggleMessage();
       }
       handleMessage(vSrc);
+      setSrc("");
     }
   };
   return (
-    <Grid container alignItems="center" sx={{ mt: "2rem" }}>
+    <Grid
+      container
+      alignItems="center"
+      sx={{ mt: "2rem" }}
+      justifyContent="space-around"
+    >
       <Grid item>
         <TextField
           label="Video Source"
