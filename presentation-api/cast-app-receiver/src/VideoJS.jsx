@@ -1,30 +1,31 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect } from "react";
 import videojs from "video.js";
 import "video.js/dist/video-js.css";
-
+let presentationConnection;
 const VideoJS = (props) => {
   const videoRef = React.useRef(null);
   const playerRef = React.useRef(null);
-  const { options, onReady, handleData } = props;
-  const [seekData, setSeekData] = useState(0);
-  const [volume, setVolume] = useState(30);
+  const { options, onReady } = props;
 
   useEffect(() => {
     let connectionIdx = 0;
-
     function addConnection(connection) {
       connection.connectionId = ++connectionIdx;
       console.log(connectionIdx);
+      presentationConnection = connection;
+      const player = playerRef.current ? playerRef.current : null;
       connection.addEventListener("message", function (event) {
         const response = JSON.parse(event.data);
         if (response.message) {
-          handleData(response);
+          player.src(response.message);
         } else if (response.seekData) {
-          setSeekData(response.seekData);
+          player.currentTime(response.seekData);
         } else if (response.volumeData) {
-          setVolume(response.volumeData);
+          if (player.muted()) {
+            player.muted(false);
+          }
+          player.volume(response.volumeData);
         } else {
-          const player = playerRef.current ? playerRef.current : null;
           switch (response.controlMessage) {
             case "play":
               player.play();
@@ -42,7 +43,6 @@ const VideoJS = (props) => {
               break;
           }
         }
-
         console.log(response);
       });
     }
@@ -55,7 +55,7 @@ const VideoJS = (props) => {
         });
       });
     }
-  }, [handleData]);
+  }, []);
 
   React.useEffect(() => {
     // make sure Video.js player is only initialized once
@@ -65,9 +65,9 @@ const VideoJS = (props) => {
 
       const player = (playerRef.current = videojs(videoElement, options, () => {
         console.log("player is ready");
-        onReady && onReady(player);
+        onReady && onReady(player, presentationConnection);
       }));
-      console.log(player);
+      player.fill(true);
     } else {
       const player = playerRef.current;
       player.src(options.sources);
@@ -85,19 +85,6 @@ const VideoJS = (props) => {
       }
     };
   }, [playerRef]);
-  useEffect(() => {
-    const player = playerRef.current;
-    if (player) {
-      player.currentTime(seekData);
-    }
-  }, [seekData]);
-
-  useEffect(() => {
-    const player = playerRef.current;
-    if (player) {
-      player.volume(volume);
-    }
-  }, [volume]);
 
   return (
     <div data-vjs-player>
