@@ -1,49 +1,43 @@
-import React from "react";
-import Container from "@mui/material/Container";
-import VideoJS from "./VideoJS"; // point to where the functional component is stored
-import { CssBaseline } from "@mui/material";
+import React, { useState } from "react";
+import { Button, CssBaseline } from "@mui/material";
 import theme from "./theme";
 import { ThemeProvider } from "@mui/system";
+import VideojsController from "./VideojsController";
+import { Grid, Box } from "@mui/material";
+import { nanoid } from "nanoid";
 
 export default function App() {
-  const playerRef = React.useRef(null);
+  const [controller, setController] = useState([{ id: `${nanoid()}` }]);
 
-  const videoJsOptions = {
-    // lookup the options in the docs for more options
-    autoplay: false,
-    controls: true,
-    responsive: true,
-    height: "525px",
-    width: "900px",
-    poster:
-      "http://commondatastorage.googleapis.com/gtv-videos-bucket/sample/images/ForBiggerMeltdowns.jpg",
-    sources: [
-      {
-        src: "http://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerMeltdowns.mp4",
-        type: "video/mp4",
-      },
-    ],
+  const handleContoller = () => {
+    setController((prev) => [...prev, { id: `${nanoid()}` }]);
   };
 
-  const handlePlayerReady = (player) => {
-    playerRef.current = player;
-
-    // you can handle player events here
-    player.on("waiting", () => {
-      console.log("player is waiting");
-    });
-
-    player.on("dispose", () => {
-      console.log("player will dispose");
-    });
+  const deleteController = (value) => {
+    setController((prev) => prev.filter((e, index) => index !== value));
   };
 
   return (
     <ThemeProvider theme={theme}>
       <CssBaseline />
-      <Container sx={{ pt: "1rem", pb: "1rem" }}>
-        <VideoJS options={videoJsOptions} onReady={handlePlayerReady} />
-      </Container>
+      <Box sx={{ padding: "1rem" }}>
+        <Button
+          variant="contained"
+          onClick={handleContoller}
+          sx={{ mb: "1rem" }}
+        >
+          Create an Controller
+        </Button>
+        <Grid container spacing={2} justifyContent="center">
+          {controller.map((e, index) => (
+            <VideojsController
+              index={index + 1}
+              deleteController={deleteController}
+              key={e.id}
+            />
+          ))}
+        </Grid>
+      </Box>
     </ThemeProvider>
   );
 }

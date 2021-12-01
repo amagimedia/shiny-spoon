@@ -3,7 +3,6 @@ import {
   Grid,
   Button,
   Slider,
-  Box,
   Typography,
   Stack,
   IconButton,
@@ -14,6 +13,7 @@ import PlayArrowIcon from "@mui/icons-material/PlayArrow";
 import PauseIcon from "@mui/icons-material/Pause";
 import VolumeMuteIcon from "@mui/icons-material/VolumeMute";
 import VolumeOffIcon from "@mui/icons-material/VolumeOff";
+import DeleteIcon from "@mui/icons-material/Delete";
 import Form from "./Form";
 
 export default function Presentation({
@@ -23,20 +23,29 @@ export default function Presentation({
   presentationConnection,
   presentationRequest,
   presentationId,
+  currentTime,
+  index,
+  handleDelete,
 }) {
-  const [slide, setSlide] = useState(0);
   const [play, setPlay] = useState(true);
-  const [duration, setDuration] = useState(0);
-  const [toggleMessage, setToggleMessage] = useState(true);
   const [volume, setVolume] = useState(40);
   const [mute, setMute] = useState(true);
 
   useEffect(() => {
-    if (playerRef.current) {
-      const value = Math.floor(playerRef.current.duration());
-      setDuration(Number.isNaN(value) ? 0 : value);
+    const value = volume / 100;
+    if (
+      presentationConnection &&
+      presentationConnection.state &&
+      presentationConnection.state === "connected"
+    ) {
+      if (value === 0) {
+        presentationConnection.send(JSON.stringify({ controlMessage: "mute" }));
+        setMute(false);
+      } else {
+        presentationConnection.send(JSON.stringify({ volumeData: value }));
+      }
     }
-  }, [view, playerRef, toggleMessage]);
+  }, [volume, presentationConnection]);
 
   const handleDisConnection = () => {
     presentationConnection.terminate();
@@ -77,17 +86,6 @@ export default function Presentation({
     }
   };
 
-  const handleChange = (event, newValue) => {
-    setSlide(newValue);
-    const player = playerRef.current;
-    if (player && presentationConnection) {
-      const value = slide * (player.duration() * 0.01);
-      if (presentationConnection) {
-        presentationConnection.send(JSON.stringify({ seekData: value }));
-      }
-    }
-  };
-
   const handlePlay = () => {
     if (play) {
       setPlay(false);
@@ -101,6 +99,7 @@ export default function Presentation({
   };
 
   const handleReconnect = () => {
+    console.log(presentationId);
     presentationRequest
       .reconnect(presentationId)
       .then((connection) => {
@@ -118,31 +117,12 @@ export default function Presentation({
     presentationConnection.close();
   };
 
-  const handleDuration = (value) => {
-    setDuration(value);
-  };
-
-  function formatDuration(value) {
-    const minute = Math.floor(value / 60);
-    const secondLeft = value - minute * 60;
-    return `${minute}:${secondLeft < 9 ? `0${secondLeft}` : secondLeft}`;
-  }
-
-  function handletoggleMessage() {
-    setToggleMessage(!toggleMessage);
-
-    // experiment
-    setTimeout(() => {
-      const value = Math.floor(playerRef.current.duration());
-      setDuration(Number.isNaN(value) ? 0 : value);
-    }, 400);
-  }
   const handleVolume = (event, newValue) => {
     setVolume(newValue);
-    const value = volume / 100;
-    if (presentationConnection) {
-      presentationConnection.send(JSON.stringify({ volumeData: value }));
-    }
+  };
+
+  const timeFormater = (time) => {
+    return new Date(time * 1000).toUTCString().match(/(\d\d:\d\d:\d\d)/)[0];
   };
 
   return (
@@ -158,10 +138,21 @@ export default function Presentation({
           border: "1px solid rgb(30, 73, 118)",
         }}
       >
-        <Grid item container>
-          <Typography variant="h2">Controls</Typography>
+        <Grid item container justifyContent="space-between" alignItems="center">
+          <Grid item>
+            <Typography variant="h3">{`Controls ${index}`}</Typography>
+          </Grid>
+          <Grid item>
+            <IconButton
+              variant="contained"
+              onClick={handleDelete}
+              sx={{ backgroundColor: "red" }}
+            >
+              <DeleteIcon />
+            </IconButton>
+          </Grid>
         </Grid>
-        <Grid item container sx={{ mt: "2em" }} justifyContent="space-between">
+        <Grid item container sx={{ mt: "2em" }} justifyContent="space-around">
           <Grid item>
             <IconButton
               onClick={() => {
@@ -202,37 +193,13 @@ export default function Presentation({
                 aria-label="Volume"
                 value={volume}
                 onChange={handleVolume}
-                sx={{ width: 100 }}
+                sx={{ width: 200 }}
               />
               <VolumeUp />
             </Stack>
           </Grid>
           <Grid item>
-            <Slider
-              aria-label="Volume"
-              value={slide}
-              onChange={handleChange}
-              sx={{
-                width: ["20rem", "25rem", "35rem"],
-                ml: ["3rem", "5rem", 0],
-              }}
-            />
-            <Box
-              sx={{
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "space-between",
-                mt: -2,
-              }}
-            >
-              <Typography variant="time" sx={{ ml: ["3rem", "5rem", 0] }}>
-                {formatDuration(Math.floor(slide * duration * 0.01))}
-              </Typography>
-              <Typography variant="time">
-                -
-                {formatDuration(Math.floor(duration - slide * duration * 0.01))}
-              </Typography>
-            </Box>
+            <Typography variant="h5">{timeFormater(currentTime)}</Typography>
           </Grid>
         </Grid>
       </Grid>
@@ -249,18 +216,26 @@ export default function Presentation({
           }}
         >
           <Grid item container sx={{ mb: "2rem" }}>
-            <Typography variant="h2"> Presentation Controls</Typography>
+            <Typography variant="h3">
+              {`Presentation Controls ${index}`}
+            </Typography>
           </Grid>
-          <Grid item container justifyContent="space-between">
+          <Grid item container justifyContent="space-around">
             <Grid item>
               <Button
                 variant="contained"
                 onClick={handleReconnect}
-                disabled={presentationId.length === 0}
+                disabled={
+                  (presentationConnection &&
+                    presentationConnection.state &&
+                    presentationConnection.state === "connected") ||
+                  presentationId.length === 0
+                }
               >
                 <Typography variant="button">Reconnect</Typography>
               </Button>
             </Grid>
+
             <Grid item>
               <Button variant="contained" onClick={handleClose} disabled={view}>
                 <Typography>Close</Typography>
@@ -276,13 +251,9 @@ export default function Presentation({
               </Button>
             </Grid>
           </Grid>
+
           <Grid item container>
-            <Form
-              handleMessage={handleMessage}
-              playerRef={playerRef}
-              handleDuration={handleDuration}
-              handletoggleMessage={handletoggleMessage}
-            />
+            <Form handleMessage={handleMessage} playerRef={playerRef} />
           </Grid>
         </Grid>
       </Grid>
