@@ -1,33 +1,22 @@
 import React from "react";
 import VideoJS from "./VideoJS";
-import { useState } from "react";
 
 export default function App() {
-  const [data, setData] = useState({
-    message:
-      "http://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerMeltdowns.mp4",
-  });
-
   const playerRef = React.useRef(null);
-
   const videoJsOptions = {
     // lookup the options in the docs for more options
-    autoplay: false,
-    controls: false,
     responsive: true,
     fluid: true,
     poster:
-      "http://commondatastorage.googleapis.com/gtv-videos-bucket/sample/images/ForBiggerMeltdowns.jpg",
-
+      "https://mango.blender.org/wp-content/uploads/2012/09/tos-poster-540x800.jpg",
     sources: [
       {
-        src: `${data.message}`,
-        type: "video/mp4",
+        src: "https://cph-p2p-msl.akamaized.net/hls/live/2000341/test/master.m3u8",
+        type: "application/x-mpegURL",
       },
     ],
   };
-
-  const handlePlayerReady = (player) => {
+  const handlePlayerReady = (player, presentationConnection) => {
     playerRef.current = player;
 
     // you can handle player events here
@@ -37,20 +26,39 @@ export default function App() {
 
     player.on("dispose", () => {
       console.log("player will dispose");
+      if (presentationConnection) {
+        console.log("message sent");
+        presentationConnection.send(JSON.stringify({ currentTime: `stop` }));
+      }
+    });
+    player.on("play", () => {
+      console.log("start playing");
+      if (presentationConnection) {
+        console.log("message sent");
+        presentationConnection.send(
+          JSON.stringify({ currentTime: `${Math.floor(player.currentTime())}` })
+        );
+      }
+    });
+
+    player.on("pause", () => {
+      if (presentationConnection) {
+        console.log("message sent");
+        presentationConnection.send(JSON.stringify({ currentTime: `stop` }));
+      }
+    });
+
+    player.on("ended", () => {
+      if (presentationConnection) {
+        console.log("message sent");
+        presentationConnection.send(JSON.stringify({ currentTime: `ended` }));
+      }
     });
   };
 
-  const handleData = (response) => {
-    setData(response);
-  };
-
   return (
-    <div>
-      <VideoJS
-        options={videoJsOptions}
-        onReady={handlePlayerReady}
-        handleData={handleData}
-      />
+    <div style={{ height: "100vh", width: "100vw" }}>
+      <VideoJS options={videoJsOptions} onReady={handlePlayerReady} />
     </div>
   );
 }
