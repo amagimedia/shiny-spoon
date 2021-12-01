@@ -1,7 +1,7 @@
 import React from "react";
-import VideoJS from "./VideoJS";
+import ReceiverVideoJS from "./ReceiverVideoJS";
 
-export default function App() {
+export default function Receiver() {
   const playerRef = React.useRef(null);
   const videoJsOptions = {
     // lookup the options in the docs for more options
@@ -58,7 +58,7 @@ export default function App() {
 
   return (
     <div style={{ height: "100vh", width: "100vw" }}>
-      <VideoJS options={videoJsOptions} onReady={handlePlayerReady} />
+      <ReceiverVideoJS options={videoJsOptions} onReady={handlePlayerReady} />
     </div>
   );
 }

@@ -2,7 +2,7 @@ import React, { useEffect } from "react";
 import videojs from "video.js";
 import "video.js/dist/video-js.css";
 let presentationConnection;
-const VideoJS = (props) => {
+const ReceiverVideoJS = (props) => {
   const videoRef = React.useRef(null);
   const playerRef = React.useRef(null);
   const { options, onReady } = props;
@@ -93,4 +93,4 @@ const VideoJS = (props) => {
   );
 };
 
-export default VideoJS;
+export default ReceiverVideoJS;

@@ -9,7 +9,7 @@ const VideoJS = ({ options, onReady, index, deleteController }) => {
   const videoRef = React.useRef(null);
   const playerRef = React.useRef(null);
   const presentationRequest = React.useRef(
-    new PresentationRequest(["https://hungry-bohr-e8dad0.netlify.app/"])
+    new PresentationRequest(["http://localhost:3000/receiver"])
   );
   const presentationConnection = React.useRef(null);
   const [view, setView] = useState(true);
